@@ -45,11 +45,11 @@ const styles = StyleSheet.create({
   },
   title: {
     color: flechasColors.textPrimary,
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: '700',
     textAlign: 'center',
   },
   titleCompact: {
-    fontSize: 27,
+    fontSize: 24,
   },
 });

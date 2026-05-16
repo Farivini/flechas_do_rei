@@ -29,7 +29,7 @@ export function GoldButton({ label, onPress, compact = false }: GoldButtonProps)
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 54,
+    minHeight: 52,
     borderRadius: flechasRadii.pill,
     backgroundColor: flechasColors.gold,
     flexDirection: 'row',

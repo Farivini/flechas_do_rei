@@ -43,16 +43,16 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 8,
+    paddingHorizontal: 0,
     paddingTop: 0,
     paddingBottom: 10,
   },
   outerFrame: {
     flexGrow: 1,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: 'rgba(246, 185, 74, 0.08)',
-    borderRadius: flechasRadii.frame - 6,
+    borderRadius: 0,
     backgroundColor: flechasColors.backgroundDeep,
   },
 });
