@@ -63,12 +63,12 @@ const styles = StyleSheet.create({
   },
   description: {
     color: flechasColors.cream,
-    fontSize: 14,
-    lineHeight: 19,
+    fontSize: 16,
+    lineHeight: 22,
     textAlign: 'center',
   },
   descriptionCompact: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
   },
 });

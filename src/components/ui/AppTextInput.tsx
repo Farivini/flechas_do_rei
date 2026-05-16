@@ -34,7 +34,7 @@ export function AppTextInput({
 
 const styles = StyleSheet.create({
   wrapper: {
-    minHeight: 52,
+    minHeight: 50,
     borderWidth: 1,
     borderColor: 'rgba(201, 169, 120, 0.32)',
     borderRadius: flechasRadii.input,
