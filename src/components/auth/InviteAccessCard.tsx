@@ -1,8 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { flechasColors, flechasTypography } from '../../theme/flechasTheme';
+import { flechasColors } from '../../theme/flechasTheme';
+import { JourneyArrowButton } from '../common/JourneyArrowButton';
 import { AppTextInput } from '../ui/AppTextInput';
-import { GoldButton } from '../ui/GoldButton';
 import { GoldCard } from '../ui/GoldCard';
 
 type InviteAccessCardProps = {
@@ -30,7 +30,12 @@ export function InviteAccessCard({
           placeholder="Seu melhor e-mail"
           value={email}
         />
-        <GoldButton compact={compact} label="ENTRAR COM E-MAIL" onPress={onSubmit} />
+        <JourneyArrowButton
+          compact={compact}
+          disabled={!email.trim()}
+          label="ENTRAR COM E-MAIL"
+          onComplete={onSubmit}
+        />
       </View>
     </GoldCard>
   );

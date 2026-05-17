@@ -8,7 +8,11 @@ import { ManualAccessInfoCard } from '../../components/auth/ManualAccessInfoCard
 import { AppScreen } from '../../components/ui/AppScreen';
 import { flechasColors, flechasSpacing } from '../../theme/flechasTheme';
 
-export function LoginScreen() {
+interface LoginScreenProps {
+  onLoginSuccess?: () => void;
+}
+
+export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const { height } = useWindowDimensions();
   const isCompactHeight = height < 760;
@@ -16,7 +20,9 @@ export function LoginScreen() {
   const heroHeight = Math.max(300, Math.min(340, height * (isShortHeight ? 0.43 : 0.4)));
 
   function handleEmailAccess() {
+    if (!email.trim()) return;
     console.log('Entrar com e-mail:', email);
+    onLoginSuccess?.();
   }
 
   return (
