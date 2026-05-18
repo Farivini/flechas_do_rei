@@ -14,7 +14,11 @@ import {
   View,
 } from 'react-native';
 
+import { useAudioPlayer } from 'expo-audio';
+import { useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+
 import { JourneyArrowButton } from '../../components/common/JourneyArrowButton';
+import { PremiumAura } from '../../components/onboarding/PremiumAura';
 import { AVATARS, AvatarId } from '../../constants/avatars';
 import {
   flechasColors,
@@ -23,6 +27,7 @@ import {
 } from '../../theme/flechasTheme';
 
 const BACKGROUND = require('../../../assets/images/heroes/onboarding.png');
+const POWERUP_SFX = require('../../../assets/audio/sfx/avatar-powerup.mp3');
 const AVATAR_SIZE = 72;
 const SPARK_COUNT = 6;
 const STAR_COUNT = 4;
@@ -69,6 +74,22 @@ export function OnboardingScreen({ onContinue }: OnboardingScreenProps) {
   const shootX = useRef(new Animated.Value(-60)).current;
   const shootY = useRef(new Animated.Value(0)).current;
   const shootOpacity = useRef(new Animated.Value(0)).current;
+
+  // Power-up sound
+  const powerUpPlayer = useAudioPlayer(POWERUP_SFX);
+
+  // Character floating
+  const floatY = useRef(new Animated.Value(0)).current;
+  const floatX = useRef(new Animated.Value(-2)).current;
+  const floatScale = useRef(new Animated.Value(1)).current;
+  const bodyScale = useRef(new Animated.Value(1)).current;
+
+  // Aura swap boost (Reanimated SharedValue → Skia)
+  const auraBoost = useSharedValue(0);
+
+  const isSwapping = useRef(false);
+
+  const bodyScaleCombined = Animated.multiply(floatScale, bodyScale);
 
   useEffect(() => {
     const loops: Animated.CompositeAnimation[] = [];
@@ -177,6 +198,64 @@ export function OnboardingScreen({ onContinue }: OnboardingScreenProps) {
       starLoop.start();
     });
 
+    // 5. Character floating (translateY / X / scale)
+    const floatYLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatY, {
+          toValue: -6,
+          duration: 1700,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatY, {
+          toValue: 0,
+          duration: 1700,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loops.push(floatYLoop);
+    floatYLoop.start();
+
+    const floatXLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatX, {
+          toValue: 2,
+          duration: 2300,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatX, {
+          toValue: -2,
+          duration: 2300,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loops.push(floatXLoop);
+    floatXLoop.start();
+
+    const floatScaleLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatScale, {
+          toValue: 1.015,
+          duration: 2500,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatScale, {
+          toValue: 1,
+          duration: 2500,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loops.push(floatScaleLoop);
+    floatScaleLoop.start();
+
     // 4. Shooting star (manual loop)
     let shootAnim: Animated.CompositeAnimation | null = null;
     const shoot = () => {
@@ -228,19 +307,17 @@ export function OnboardingScreen({ onContinue }: OnboardingScreenProps) {
 
   function selectAvatar(id: AvatarId) {
     if (id === selected) return;
+    if (isSwapping.current) return;
+    isSwapping.current = true;
 
-    Animated.timing(bodyOpacity, {
-      toValue: 0,
-      duration: 140,
-      useNativeDriver: true,
-    }).start(() => {
-      setSelected(id);
-      Animated.timing(bodyOpacity, {
-        toValue: 1,
-        duration: 210,
-        useNativeDriver: true,
-      }).start();
-    });
+    powerUpPlayer.seekTo(0);
+    powerUpPlayer.play();
+
+    // Pico de energia na aura (Skia lê esse SharedValue)
+    auraBoost.value = withSequence(
+      withTiming(1, { duration: 170 }),
+      withTiming(0, { duration: 640 }),
+    );
 
     AVATARS.forEach(av => {
       Animated.spring(scaleMap[av.id], {
@@ -249,6 +326,36 @@ export function OnboardingScreen({ onContinue }: OnboardingScreenProps) {
         friction: 8,
         useNativeDriver: true,
       }).start();
+    });
+
+    Animated.parallel([
+      Animated.timing(bodyOpacity, {
+        toValue: 0,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bodyScale, {
+        toValue: 0.9,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setSelected(id);
+      Animated.parallel([
+        Animated.timing(bodyOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(bodyScale, {
+          toValue: 1,
+          tension: 70,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        isSwapping.current = false;
+      });
     });
   }
 
@@ -265,6 +372,7 @@ export function OnboardingScreen({ onContinue }: OnboardingScreenProps) {
 
   const selectedAvatar = AVATARS.find(av => av.id === selected)!;
   const statusBarOffset = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 0;
+  const auraSize = Math.min(width * 0.85, 320);
 
   // Beam center
   const beamLeft = width * 0.5 - 28;
@@ -374,7 +482,23 @@ export function OnboardingScreen({ onContinue }: OnboardingScreenProps) {
 
         {/* Personagem grande */}
         <View style={styles.characterArea}>
-          <Animated.View style={{ opacity: bodyOpacity }}>
+          {/* Aura azul premium (Skia + Reanimated) */}
+          <View pointerEvents="none" style={styles.auraWrap}>
+            <PremiumAura size={auraSize} boost={auraBoost} />
+          </View>
+
+          {/* Personagem PNG flutuando */}
+          <Animated.View
+            style={{
+              zIndex: 2,
+              opacity: bodyOpacity,
+              transform: [
+                { translateX: floatX },
+                { translateY: floatY },
+                { scale: bodyScaleCombined },
+              ],
+            }}
+          >
             <Image
               resizeMode="contain"
               source={selectedAvatar.body}
@@ -535,6 +659,12 @@ const styles = StyleSheet.create({
   characterImage: {
     width: 200,
     height: 270,
+  },
+  auraWrap: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Bottom panel
